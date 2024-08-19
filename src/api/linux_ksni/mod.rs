@@ -15,6 +15,7 @@ enum TrayItem {
 struct Tray {
     title: String,
     icon: IconSource,
+    click: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     actions: Vec<TrayItem>,
     next_id: u32,
 }
@@ -81,6 +82,12 @@ impl ksni::Tray for Tray {
             })
             .collect()
     }
+
+    fn activate(&mut self, _x: i32, _y: i32) {
+        if let Some(action) = &self.click {
+            action();
+        }
+    }
 }
 
 impl TrayItemLinux {
@@ -88,6 +95,7 @@ impl TrayItemLinux {
         let svc = ksni::TrayService::new(Tray {
             title: title.to_string(),
             icon,
+            click: None,
             actions: vec![],
             next_id: 0,
         });
@@ -109,6 +117,15 @@ impl TrayItemLinux {
             tray.actions.push(TrayItem::Label(label.to_string()));
         });
 
+        Ok(())
+    }
+
+    pub fn set_click<F>(&mut self, cb: F) -> Result<(), TIError>
+    where
+        F: Fn() -> () + Send + Sync + 'static,
+    {
+        let action = Arc::new(cb);
+        self.tray.update(|tray| tray.click = Some(action));
         Ok(())
     }
 

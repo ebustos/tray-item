@@ -40,6 +40,13 @@ impl TrayItem {
         self.0.add_label(label)
     }
 
+    pub fn set_click<F>(&mut self, cb: F) -> Result<(), TIError>
+    where
+        F: Fn() -> () + Send + Sync + 'static,
+    {
+        self.0.set_click(cb)
+    }
+
     pub fn add_menu_item<F>(&mut self, label: &str, cb: F) -> Result<(), TIError>
     where
         F: Fn() + Send + Sync + 'static,
